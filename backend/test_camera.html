@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Test</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Camera Backend Test</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <div>
+        <button onclick="startCamera()">Start Camera</button>
+        <button onclick="stopCamera()">Stop Camera</button>
+    </div>
+    <div id="status">Status: Not connected</div>
+    <div id="gesture">Gesture: None</div>
+    
+    <script>
+        const socket = io('http://localhost:5000');
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let streaming = false;
+        let interval;
+        
+        socket.on('connect', () => {
+            document.getElementById('status').innerText = 'Status: Connected';
+            console.log('Connected to backend');
+        });
+        
+        socket.on('gesture_update', (data) => {
+            document.getElementById('gesture').innerText = 
+                `Gesture: ${data.gesture} (Confidence: ${(data.confidence * 100).toFixed(1)}%)`;
+        });
+        
+        socket.on('error', (data) => {
+            console.error('Error:', data.message);
+        });
+        
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                video.srcObject = stream;
+                streaming = true;
+                
+                // Start sending frames
+                interval = setInterval(() => {
+                    if (streaming) {
+                        captureAndSend();
+                    }
+                }, 100); // 10 FPS
+                
+                // Start detection on server
+                fetch('http://localhost:5000/api/start');
+                
+            } catch (err) {
+                console.error('Camera error:', err);
+            }
+        }
+        
+        function captureAndSend() {
+            ctx.drawImage(video, 0, 0, 640, 480);
+            const frame = canvas.toDataURL('image/jpeg', 0.7);
+            socket.emit('frame', { image: frame });
+        }
+        
+        function stopCamera() {
+            streaming = false;
+            if (interval) clearInterval(interval);
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            fetch('http://localhost:5000/api/stop');
+        }
+        
+        // Auto-connect
+        socket.connect();
+    </script>
+</body>
+</html>

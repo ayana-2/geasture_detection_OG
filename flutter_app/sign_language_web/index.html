@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Real Time Sign Language Detection</title>
+
+  <!-- MediaPipe Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial;
+      background: #111;
+      color: white;
+    }
+    video, canvas {
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+    h2 {
+      margin-top: 10px;
+      color: #00ffcc;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>✋ Real Time Sign Language Converter</h1>
+
+  <video id="video" width="640" height="480" autoplay></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+
+  <h2 id="prediction">Prediction: Waiting...</h2>
+
+<script>
+  const videoElement = document.getElementById("video");
+  const canvasElement = document.getElementById("canvas");
+  const canvasCtx = canvasElement.getContext("2d");
+  const predictionText = document.getElementById("prediction");
+
+  // MediaPipe Hands
+  const hands = new Hands({
+    locateFile: (file) => {
+      return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }
+  });
+
+  hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.7
+  });
+
+  hands.onResults((results) => {
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+    if (results.multiHandLandmarks) {
+      for (const landmarks of results.multiHandLandmarks) {
+        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+          {color: '#00FF00', lineWidth: 4});
+        drawLandmarks(canvasCtx, landmarks,
+          {color: '#FF0000', lineWidth: 2});
+      }
+
+      // SIMPLE DEMO PREDICTION
+      predictionText.innerText = "Prediction: Hand Detected ✋";
+    } else {
+      predictionText.innerText = "Prediction: Waiting...";
+    }
+  });
+
+  // Camera
+  const camera = new Camera(videoElement, {
+    onFrame: async () => {
+      await hands.send({image: videoElement});
+    },
+    width: 640,
+    height: 480
+  });
+
+  camera.start();
+</script>
+</body>
+</html>

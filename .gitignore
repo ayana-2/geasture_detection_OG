@@ -1,0 +1,6 @@
+backend/asl_translator/venv/ 
+.venv/ 
+venv/ 
+.idea/ 
+__pycache__/ 
+node_modules/ 

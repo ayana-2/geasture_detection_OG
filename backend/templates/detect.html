@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ASL Detection</title>
+<style>
+body{background:#0f172a;color:white;font-family:Arial}
+#videoFeed{border:3px solid #38bdf8;border-radius:12px;width:640px;height:480px}
+#currentLetter{font-size:120px;color:#f87171;text-align:center}
+.history-item{display:flex;justify-content:space-between;padding:10px;background:rgba(30,41,59,0.8);margin-bottom:5px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>ASL Detection Dashboard</h1>
+<img id="videoFeed" src="/video_feed">
+<div id="currentLetter">-</div>
+<h2>History</h2>
+<div id="historyList"></div>
+
+<script>
+function updateLetter(){
+fetch('/api/current_letter').then(r=>r.json()).then(d=>{document.getElementById('currentLetter').textContent=d.letter})}
+function updateHistory(){
+fetch('/api/detection_history').then(r=>r.json()).then(d=>{
+let html='';for(let item of d.history.slice(0,8)) html+='<div class="history-item"><span>'+item.letter+'</span><span>'+item.time+'</span></div>';
+document.getElementById('historyList').innerHTML=html;
+});
+}
+setInterval(updateLetter,500);
+setInterval(updateHistory,1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Translator - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-page">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-hands"></i>
+                <h2>ASL Translator</h2>
+            </div>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-info">
+                <h4>{{ user.username }}</h4>
+                <p>{{ user.email }}</p>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="active">
+                <a href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('detect') }}">
+                    <i class="fas fa-camera"></i> Live Detection
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fas fa-history"></i> Detection History
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fas fa-book"></i> ASL Learning
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </a>
+            </li>
+            {% if user.is_admin %}
+            <li>
+                <a href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-users-cog"></i> Admin Panel
+                </a>
+            </li>
+            {% endif %}
+            <li>
+                <a href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <p>ASL Translator v1.0</p>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <h1>Welcome back, {{ user.username }}! 👋</h1>
+                <p>Real-time American Sign Language Translation System</p>
+            </div>
+            <div class="header-right">
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-dropdown">
+                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=4361ee&color=fff" 
+                         alt="{{ user.username }}">
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #4361ee;">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Live Detection</h3>
+                    <p>Start real-time ASL translation</p>
+                </div>
+                <a href="{{ url_for('detect') }}" class="stat-link">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #3a0ca3;">
+                    <i class="fas fa-hands"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>ASL Alphabet</h3>
+                    <p>A-Z sign language recognition</p>
+                </div>
+                <a href="#" class="stat-link">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #4cc9f0;">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>AI Powered</h3>
+                    <p>Advanced machine learning</p>
+                </div>
+                <a href="#" class="stat-link">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #f72585;">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>History</h3>
+                    <p>View past detections</p>
+                </div>
+                <a href="#" class="stat-link">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="actions-section">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="{{ url_for('detect') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h3>Start Detection</h3>
+                    <p>Begin real-time ASL translation</p>
+                </a>
+                
+                <a href="#" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3>Learn ASL</h3>
+                    <p>Interactive learning guide</p>
+                </a>
+                
+                <a href="#" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>View Analytics</h3>
+                    <p>Your detection statistics</p>
+                </a>
+                
+                <a href="#" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Settings</h3>
+                    <p>Customize your experience</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- ASL Guide -->
+        <div class="guide-section">
+            <h2 class="section-title">Common ASL Signs</h2>
+            <div class="alphabet-grid">
+                {% for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+                                  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'] %}
+                <div class="alphabet-card">
+                    <div class="letter">{{ letter }}</div>
+                    <p>ASL Sign</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <p>&copy; 2024 ASL Translator System. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Help Center</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        // Sidebar toggle for mobile
+        document.querySelector('.user-dropdown').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('mobile-open');
+        });
+
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            const dateString = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            document.querySelector('.header-left p').innerHTML = 
+                `${dateString} • ${timeString} • ASL Translation System`;
+        }
+        
+        updateTime();
+        setInterval(updateTime, 60000);
+    </script>
+</body>
+</html>

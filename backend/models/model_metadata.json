@@ -1,0 +1,8 @@
+{
+  "accuracy": 0.95,
+  "model_type": "RandomForest",
+  "num_classes": 30,
+  "features": 78,
+  "is_dummy": true,
+  "description": "Dummy model for initial testing"
+}

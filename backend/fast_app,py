@@ -1,0 +1,111 @@
+from flask import Flask, render_template, Response, jsonify
+import cv2
+import mediapipe as mp
+import threading
+import time
+
+app = Flask(__name__)
+
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(
+    static_image_mode=False,
+    max_num_hands=1,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
+)
+
+current_frame = None
+detected_letter = "-"
+lock = threading.Lock()
+
+def camera_worker():
+    global current_frame, detected_letter
+
+    print("Starting camera...")
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Camera not found")
+        return
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+    cap.set(cv2.CAP_PROP_FPS, 10)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            continue
+
+        frame = cv2.flip(frame, 1)
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = hands.process(rgb)
+
+        letter = "-"
+
+        if results.multi_hand_landmarks:
+            hand = results.multi_hand_landmarks[0]
+
+            for lm in hand.landmark:
+                x = int(lm.x * 320)
+                y = int(lm.y * 240)
+                cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)
+
+            tips = [8, 12, 16, 20]
+            extended = 0
+            for tip in tips:
+                if hand.landmark[tip].y < hand.landmark[0].y:
+                    extended += 1
+
+            if extended == 0:
+                letter = "A"
+            elif extended == 1:
+                letter = "D"
+            elif extended == 2:
+                letter = "V"
+            elif extended == 4:
+                letter = "B"
+
+        with lock:
+            detected_letter = letter
+            current_frame = frame
+
+        time.sleep(0.05)
+
+@app.route("/")
+def home():
+    return render_template("simple.html")
+
+@app.route("/video")
+def video():
+    def generate():
+        global current_frame
+        while True:
+            with lock:
+                if current_frame is None:
+                    continue
+                _, jpeg = cv2.imencode(
+                    ".jpg", current_frame,
+                    [cv2.IMWRITE_JPEG_QUALITY, 60]
+                )
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" +
+                   jpeg.tobytes() + b"\r\n")
+            time.sleep(0.08)
+
+    return Response(generate(),
+                    mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/prediction")
+def prediction():
+    return jsonify({"letter": detected_letter})
+
+if __name__ == "__main__":
+    threading.Thread(target=camera_worker, daemon=True).start()
+
+    print("====================================")
+    print("FAST GESTURE DETECTION – WORKING")
+    print("http://localhost:5000")
+    print("====================================")
+
+    app.run(debug=False, threaded=True)

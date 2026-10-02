@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A-Z Letter Detection</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5.0.0/dist/tesseract.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .camera-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #444;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #videoFeed {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            background: #000;
+            border-radius: 10px;
+        }
+        
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            border-radius: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #startBtn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+        }
+        
+        #startBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        #stopBtn {
+            background: linear-gradient(135deg, #f44336, #c62828);
+            color: white;
+        }
+        
+        #stopBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+        
+        #detectBtn {
+            background: linear-gradient(135deg, #2196F3, #0D47A1);
+            color: white;
+        }
+        
+        #detectBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        .detection-result {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            margin-bottom: 25px;
+        }
+        
+        .detected-letter {
+            font-size: 8rem;
+            font-weight: bold;
+            color: #667eea;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .confidence {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .result-details {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .history-item {
+            background: #f8f9fa;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .instructions {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+        }
+        
+        .instructions h3 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .status {
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <h1>A-Z Letter Detection</h1>
+        <p>Real-time camera detection for English letters A through Z</p>
+    </div>
+    
+    <div class="main-container">
+        <div class="camera-section">
+            <h2 class="section-title">Camera Feed</h2>
+            
+            <div class="status" id="status">
+                Camera is not active. Click "Start Camera" to begin.
+            </div>
+            
+            <div class="video-container">
+                <video id="videoFeed" autoplay playsinline></video>
+                <canvas id="canvasOverlay" class="canvas-overlay"></canvas>
+            </div>
+            
+            <div class="controls">
+                <button id="startBtn" class="control-btn">Start Camera</button>
+                <button id="stopBtn" class="control-btn" disabled>Stop Camera</button>
+                <button id="detectBtn" class="control-btn" disabled>Detect Letter</button>
+            </div>
+            
+            <div class="instructions">
+                <h3>How to use:</h3>
+                <ul>
+                    <li>1. Click <strong>"Start Camera"</strong> to enable your camera</li>
+                    <li>2. Hold a letter (A-Z) in front of the camera</li>
+                    <li>3. Click <strong>"Detect Letter"</strong> to analyze the image</li>
+                    <li>4. View results in the Detection Results panel</li>
+                </ul>
+                <p><strong>Tip:</strong> Ensure good lighting and clear letters for best results.</p>
+            </div>
+        </div>
+        
+        <div class="results-section">
+            <h2 class="section-title">Detection Results</h2>
+            
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Processing image... This may take a few seconds.</p>
+            </div>
+            
+            <div class="detection-result">
+                <h3>Detected Letter</h3>
+                <div class="detected-letter" id="detectedLetter">-</div>
+                <div class="confidence" id="confidence">Confidence: -</div>
+                
+                <div class="result-details">
+                    <h4>Detection Details:</h4>
+                    <p><strong>Text Found:</strong> <span id="detectedText">None</span></p>
+                    <p><strong>Processing Time:</strong> <span id="processingTime">-</span> seconds</p>
+                    <p><strong>Status:</strong> <span id="detectionStatus">Waiting for input</span></p>
+                </div>
+            </div>
+            
+            <h3>Detection History</h3>
+            <div class="history-list" id="historyList">
+                <div class="history-item">
+                    <span>No detections yet</span>
+                    <span>-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const video = document.getElementById('videoFeed');
+        const canvas = document.getElementById('canvasOverlay');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const detectBtn = document.getElementById('detectBtn');
+        const detectedLetterEl = document.getElementById('detectedLetter');
+        const confidenceEl = document.getElementById('confidence');
+        const detectedTextEl = document.getElementById('detectedText');
+        const processingTimeEl = document.getElementById('processingTime');
+        const detectionStatusEl = document.getElementById('detectionStatus');
+        const statusEl = document.getElementById('status');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const historyList = document.getElementById('historyList');
+        
+        let stream = null;
+        let detectionHistory = [];
+        
+        // Check login state
+        window.onload = function() {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                alert('Please login first');
+                window.location.href = '/';
+            }
+        };
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('user');
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            window.location.href = '/';
+        }
+        
+        // 1. Start Camera
+        startBtn.addEventListener('click', async () => {
+            try {
+                statusEl.textContent = 'Accessing camera...';
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'environment'
+                    } 
+                });
+                
+                video.srcObject = stream;
+                
+                // Wait for video to load
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    detectBtn.disabled = false;
+                    
+                    statusEl.textContent = 'Camera active. Hold a letter (A-Z) in front of the camera and click "Detect Letter".';
+                    statusEl.style.background = '#e8f7e8';
+                    statusEl.style.color = '#2e7d32';
+                };
+                
+            } catch (err) {
+                statusEl.textContent = 'Camera error: ' + err.message;
+                statusEl.style.background = '#ffebee';
+                statusEl.style.color = '#c62828';
+            }
+        });
+        
+        // 2. Stop Camera
+        stopBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                detectBtn.disabled = true;
+                stream = null;
+                
+                detectedLetterEl.textContent = '-';
+                confidenceEl.textContent = 'Confidence: -';
+                detectedTextEl.textContent = 'None';
+                detectionStatusEl.textContent = 'Camera stopped';
+                statusEl.textContent = 'Camera is not active. Click "Start Camera" to begin.';
+                statusEl.style.background = '#f0f7ff';
+                statusEl.style.color = '#2196F3';
+            }
+        });
+        
+        // 3. Detect Letter with Tesseract.js (REAL OCR)
+        detectBtn.addEventListener('click', async () => {
+            if (!stream) {
+                alert('Please start the camera first');
+                return;
+            }
+            
+            // Draw current frame to canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Show loading indicator
+            loadingIndicator.style.display = 'block';
+            detectBtn.disabled = true;
+            detectionStatusEl.textContent = 'Processing image with OCR...';
+            
+            const startTime = Date.now();
+            
+            try {
+                // Convert canvas to image data
+                const imageData = canvas.toDataURL('image/jpeg');
+                
+                // Use Tesseract.js for OCR (Real letter detection)
+                const result = await Tesseract.recognize(
+                    imageData,
+                    'eng', // English language
+                    {
+                        logger: m => {
+                            detectionStatusEl.textContent = `Status: ${m.status}`;
+                        }
+                    }
+                );
+                
+                const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                // Process the detected text
+                let detectedText = result.data.text.trim().toUpperCase();
+                let detectedLetter = '-';
+                let confidence = '0%';
+                
+                if (detectedText && result.data.confidence > 0) {
+                    // Extract the first letter (A-Z)
+                    const firstLetterMatch = detectedText.match(/[A-Z]/);
+                    if (firstLetterMatch) {
+                        detectedLetter = firstLetterMatch[0];
+                    } else {
+                        detectedLetter = detectedText.charAt(0) || '-';
+                    }
+                    
+                    confidence = Math.min(100, Math.max(0, result.data.confidence)).toFixed(1) + '%';
+                    
+                    // Update display
+                    detectedLetterEl.textContent = detectedLetter;
+                    confidenceEl.textContent = `Confidence: ${confidence}`;
+                    detectedTextEl.textContent = detectedText || 'None';
+                    processingTimeEl.textContent = processingTime;
+                    detectionStatusEl.textContent = 'Detection complete';
+                    
+                    // Add to history
+                    addToHistory(detectedLetter, confidence, processingTime);
+                    
+                    // Draw detection box on canvas
+                    if (result.data.words.length > 0) {
+                        drawDetectionBox(result.data.words[0]);
+                    }
+                } else {
+                    detectedLetterEl.textContent = '-';
+                    confidenceEl.textContent = 'Confidence: 0%';
+                    detectedTextEl.textContent = 'No letters detected';
+                    processingTimeEl.textContent = processingTime;
+                    detectionStatusEl.textContent = 'No letters found in image';
+                    
+                    addToHistory('None', '0%', processingTime);
+                }
+                
+            } catch (error) {
+                console.error('OCR Error:', error);
+                detectedLetterEl.textContent = 'Error';
+                confidenceEl.textContent = 'Confidence: 0%';
+                detectedTextEl.textContent = 'OCR processing failed';
+                processingTimeEl.textContent = '0';
+                detectionStatusEl.textContent = 'Error during detection';
+            } finally {
+                loadingIndicator.style.display = 'none';
+                detectBtn.disabled = false;
+            }
+        });
+        
+        // Draw detection box on canvas
+        function drawDetectionBox(word) {
+            const bbox = word.bbox;
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+            
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillText(`Letter: ${word.text}`, bbox.x0, bbox.y0 - 10);
+        }
+        
+        // Add detection to history
+        function addToHistory(letter, confidence, time) {
+            const timestamp = new Date().toLocaleTimeString();
+            detectionHistory.unshift({ letter, confidence, time, timestamp });
+            
+            // Update history display
+            historyList.innerHTML = '';
+            
+            if (detectionHistory.length === 0) {
+                historyList.innerHTML = '<div class="history-item"><span>No detections yet</span><span>-</span></div>';
+                return;
+            }
+            
+            detectionHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <span>Letter: <strong>${item.letter}</strong> (${item.confidence})</span>
+                    <span>${item.timestamp}</span>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // Auto-stop camera when leaving page
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+        
+        // Demo mode: Auto-start camera for testing
+        function startDemoMode() {
+            setTimeout(() => {
+                if (!stream) {
+                    startBtn.click();
+                }
+            }, 1000);
+        }
+        
+        // Uncomment to auto-start camera on page load (for testing)
+        // startDemoMode();
+    </script>
+</body>
+</html>
